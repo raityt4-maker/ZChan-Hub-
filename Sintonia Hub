@@ -1,0 +1,369 @@
+-- Sintonia Hub | UI Manual + Spawn por Nome
+-- Funciona no Delta Android
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+
+-- ===== CRIAÇÃO DA UI =====
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SintoniaHub"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Frame principal
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 280, 0, 320)
+MainFrame.Position = UDim2.new(0.5, -140, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = MainFrame
+
+-- Título
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 35)
+Title.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+Title.BorderSizePixel = 0
+Title.Text = "ZChan Hub"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 16
+Title.Font = Enum.Font.GothamBold
+Title.Parent = MainFrame
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 10)
+TitleCorner.Parent = Title
+
+-- Botão fechar
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -35, 0, 3)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(80, 40, 40)
+CloseBtn.BorderSizePixel = 0
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+CloseBtn.TextSize = 14
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Parent = MainFrame
+
+-- Botão minimizar
+local MinBtn = Instance.new("TextButton")
+MinBtn.Size = UDim2.new(0, 30, 0, 30)
+MinBtn.Position = UDim2.new(1, -70, 0, 3)
+MinBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+MinBtn.BorderSizePixel = 0
+MinBtn.Text = "-"
+MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinBtn.TextSize = 14
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.Parent = MainFrame
+
+-- ===== LABEL "NOME DA ARMA" =====
+local NameLabel = Instance.new("TextLabel")
+NameLabel.Size = UDim2.new(1, -20, 0, 20)
+NameLabel.Position = UDim2.new(0, 10, 0, 45)
+NameLabel.BackgroundTransparency = 1
+NameLabel.Text = "Nome da arma (ex: AK47, Pistol):"
+NameLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+NameLabel.TextSize = 12
+NameLabel.Font = Enum.Font.Gotham
+NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+NameLabel.Parent = MainFrame
+
+-- ===== CAMPO DE TEXTO =====
+local TextBox = Instance.new("TextBox")
+TextBox.Size = UDim2.new(1, -20, 0, 38)
+TextBox.Position = UDim2.new(0, 10, 0, 70)
+TextBox.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+TextBox.BorderSizePixel = 0
+TextBox.Text = ""
+TextBox.PlaceholderText = "Digite o nome da arma..."
+TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextBox.PlaceholderColor3 = Color3.fromRGB(130, 130, 130)
+TextBox.TextSize = 13
+TextBox.Font = Enum.Font.Gotham
+TextBox.ClearTextOnFocus = false
+TextBox.Parent = MainFrame
+
+local TextBoxCorner = Instance.new("UICorner")
+TextBoxCorner.CornerRadius = UDim.new(0, 8)
+TextBoxCorner.Parent = TextBox
+
+-- ===== FUNÇÕES AUXILIARES =====
+local function Notify(text)
+    local notif = Instance.new("TextLabel")
+    notif.Size = UDim2.new(0, 220, 0, 40)
+    notif.Position = UDim2.new(0.5, -110, 0.85, 0)
+    notif.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    notif.BorderSizePixel = 0
+    notif.Text = text
+    notif.TextColor3 = Color3.fromRGB(255, 255, 255)
+    notif.TextSize = 12
+    notif.Font = Enum.Font.Gotham
+    notif.TextWrapped = true
+    notif.Parent = ScreenGui
+
+    local nc = Instance.new("UICorner")
+    nc.CornerRadius = UDim.new(0, 8)
+    nc.Parent = notif
+
+    task.delay(3, function()
+        notif:Destroy()
+    end)
+end
+
+-- Procura uma Tool pelo nome em vários locais
+local function FindToolByName(name)
+    local searchLocations = {
+        ReplicatedStorage,
+        ReplicatedStorage:FindFirstChild("Weapons"),
+        ReplicatedStorage:FindFirstChild("Tools"),
+        ReplicatedStorage:FindFirstChild("Items"),
+        ReplicatedStorage:FindFirstChild("Assets"),
+        game:GetService("ServerStorage"), -- pode não funcionar (server)
+        workspace,
+        workspace:FindFirstChild("Weapons"),
+    }
+
+    -- Busca exata
+    for _, loc in pairs(searchLocations) do
+        if loc then
+            for _, obj in pairs(loc:GetDescendants()) do
+                if obj:IsA("Tool") and obj.Name:lower() == name:lower() then
+                    return obj
+                end
+            end
+        end
+    end
+
+    -- Busca parcial (contém)
+    for _, loc in pairs(searchLocations) do
+        if loc then
+            for _, obj in pairs(loc:GetDescendants()) do
+                if obj:IsA("Tool") and obj.Name:lower():find(name:lower(), 1, true) then
+                    return obj
+                end
+            end
+        end
+    end
+
+    return nil
+end
+
+-- Tenta spawnar a arma no Backpack
+local function SpawnToolByName(name)
+    if name == "" or name == nil then
+        Notify("Digite um nome")
+        return
+    end
+
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    if not backpack then
+        Notify("Backpack não encontrado")
+        return
+    end
+
+    local tool = FindToolByName(name)
+
+    if tool then
+        local clone = tool:Clone()
+        clone.Parent = backpack
+        Notify("Spawnado: " .. clone.Name)
+    else
+        Notify("Arma não encontrada: " .. name)
+    end
+end
+
+-- Tenta disparar RemoteEvents comuns de compra/spawn
+local function TryRemoteSpawn(name)
+    local remoteNames = {
+        "PurchaseItem", "BuyItem", "BuyWeapon", "GiveWeapon",
+        "GiveTool", "SpawnTool", "SpawnWeapon", "RequestWeapon",
+        "BuyTool", "PurchaseWeapon", "GetWeapon"
+    }
+
+    local fired = false
+
+    for _, rName in pairs(remoteNames) do
+        local remote = ReplicatedStorage:FindFirstChild(rName)
+            or ReplicatedStorage:FindFirstChild(rName, true)
+
+        if remote and remote:IsA("RemoteEvent") then
+            pcall(function()
+                remote:FireServer(name)
+                remote:FireServer("Buy", name)
+                remote:FireServer("Purchase", name)
+                remote:FireServer(name, 1)
+            end)
+            fired = true
+        end
+    end
+
+    if not fired then
+        Notify("Nenhum RemoteEvent encontrado")
+    else
+        Notify("Tentativa enviada")
+    end
+end
+
+-- ===== BOTÃO: SPAWNAR PELO NOME =====
+local SpawnBtn = Instance.new("TextButton")
+SpawnBtn.Size = UDim2.new(1, -20, 0, 42)
+SpawnBtn.Position = UDim2.new(0, 10, 0, 118)
+SpawnBtn.BackgroundColor3 = Color3.fromRGB(70, 40, 120)
+SpawnBtn.BorderSizePixel = 0
+SpawnBtn.Text = "Spawnar Arma"
+SpawnBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpawnBtn.TextSize = 14
+SpawnBtn.Font = Enum.Font.GothamBold
+SpawnBtn.Parent = MainFrame
+
+local SpawnCorner = Instance.new("UICorner")
+SpawnCorner.CornerRadius = UDim.new(0, 8)
+SpawnCorner.Parent = SpawnBtn
+
+SpawnBtn.MouseButton1Click:Connect(function()
+    SpawnToolByName(TextBox.Text)
+end)
+
+-- ===== BOTÃO: TENTAR VIA REMOTE =====
+local RemoteBtn = Instance.new("TextButton")
+RemoteBtn.Size = UDim2.new(1, -20, 0, 38)
+RemoteBtn.Position = UDim2.new(0, 10, 0, 168)
+RemoteBtn.BackgroundColor3 = Color3.fromRGB(40, 70, 120)
+RemoteBtn.BorderSizePixel = 0
+RemoteBtn.Text = "Tentar via RemoteEvent"
+RemoteBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+RemoteBtn.TextSize = 12
+RemoteBtn.Font = Enum.Font.Gotham
+RemoteBtn.Parent = MainFrame
+
+local RemoteCorner = Instance.new("UICorner")
+RemoteCorner.CornerRadius = UDim.new(0, 8)
+RemoteCorner.Parent = RemoteBtn
+
+RemoteBtn.MouseButton1Click:Connect(function()
+    TryRemoteSpawn(TextBox.Text)
+end)
+
+-- ===== BOTÃO: LISTAR TODAS AS TOOLS =====
+local ListBtn = Instance.new("TextButton")
+ListBtn.Size = UDim2.new(1, -20, 0, 38)
+ListBtn.Position = UDim2.new(0, 10, 0, 214)
+ListBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+ListBtn.BorderSizePixel = 0
+ListBtn.Text = "Listar Tools Disponíveis"
+ListBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+ListBtn.TextSize = 12
+ListBtn.Font = Enum.Font.Gotham
+ListBtn.Parent = MainFrame
+
+local ListCorner = Instance.new("UICorner")
+ListCorner.CornerRadius = UDim.new(0, 8)
+ListCorner.Parent = ListBtn
+
+ListBtn.MouseButton1Click:Connect(function()
+    local found = {}
+    local locations = {ReplicatedStorage, workspace}
+
+    for _, loc in pairs(locations) do
+        for _, obj in pairs(loc:GetDescendants()) do
+            if obj:IsA("Tool") then
+                table.insert(found, obj.Name)
+            end
+        end
+    end
+
+    if #found == 0 then
+        Notify("Nenhuma Tool encontrada no cliente")
+    else
+        -- Mostra as primeiras 10
+        local msg = "Tools: " .. table.concat(found, ", ", 1, math.min(10, #found))
+        Notify(msg)
+        print("=== TOOLS ENCONTRADAS ===")
+        for i, n in ipairs(found) do
+            print(i .. ". " .. n)
+        end
+    end
+end)
+
+-- ===== BOTÃO: CLONAR ARMAS ATUAIS =====
+local CloneBtn = Instance.new("TextButton")
+CloneBtn.Size = UDim2.new(1, -20, 0, 38)
+CloneBtn.Position = UDim2.new(0, 10, 0, 260)
+CloneBtn.BackgroundColor3 = Color3.fromRGB(50, 80, 50)
+CloneBtn.BorderSizePixel = 0
+CloneBtn.Text = "Clonar Armas Atuais"
+CloneBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloneBtn.TextSize = 12
+CloneBtn.Font = Enum.Font.Gotham
+CloneBtn.Parent = MainFrame
+
+local CloneCorner = Instance.new("UICorner")
+CloneCorner.CornerRadius = UDim.new(0, 8)
+CloneCorner.Parent = CloneBtn
+
+CloneBtn.MouseButton1Click:Connect(function()
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    local char = LocalPlayer.Character
+    local count = 0
+
+    if backpack then
+        for _, tool in pairs(backpack:GetChildren()) do
+            if tool:IsA("Tool") then
+                tool:Clone().Parent = backpack
+                count = count + 1
+            end
+        end
+    end
+
+    if char then
+        for _, tool in pairs(char:GetChildren()) do
+            if tool:IsA("Tool") then
+                tool:Clone().Parent = backpack
+                count = count + 1
+            end
+        end
+    end
+
+    Notify("Clonadas: " .. count)
+end)
+
+-- ===== FUNÇÕES DOS BOTÕES =====
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+local minimized = false
+local originalSize = MainFrame.Size
+
+MinBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        MainFrame.Size = UDim2.new(0, 280, 0, 35)
+        NameLabel.Visible = false
+        TextBox.Visible = false
+        SpawnBtn.Visible = false
+        RemoteBtn.Visible = false
+        ListBtn.Visible = false
+        CloneBtn.Visible = false
+    else
+        MainFrame.Size = originalSize
+        NameLabel.Visible = true
+        TextBox.Visible = true
+        SpawnBtn.Visible = true
+        RemoteBtn.Visible = true
+        ListBtn.Visible = true
+        CloneBtn.Visible = true
+    end
+end)
+
+print("[Sintonia Hub] Carregado!")
+Notify("Hub carregado")
